@@ -117,6 +117,7 @@ nCellsSession<-function(rs){
 
 The code is very similar. 
 An important point is to return the results as part of a list.
+(Note that the results cannot be vectors.)
 You can test the function like this.
 
 ```{R epFunction3}
@@ -137,7 +138,7 @@ nCellsSession(rs)
 
 You can also return much more data. 
 For example, you can analyze several spatial properties of neurons and return their firing rate maps.
-In this case, we return an array and a data.frame.
+In this case, we return an array and a data.frame. It is not possible to return vectors.
 
 ```{R epFunction5, cache=TRUE}
 
