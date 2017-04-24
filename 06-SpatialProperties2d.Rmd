@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # SpatialProperties2d
 
 This chapter documents the use of the SpatialProperties2d class of the relectro package. 
@@ -129,6 +134,48 @@ print(st.sqr70@cellList[sp@infoScore>statThreshold])
 
 The function takes a few seconds as it needs to calculate `r length(sp@infoScore)*sp@nShufflings` firing rate maps and spatial autocorrelations.
 
+
+## Speed score
+
+There has been a recent interest in the relationship between running speed and the firing rate of neurons.
+You can test for such relationship as shown below.
+
+```{R speedCode, cache=TRUE}
+st<-ifr(st) ## get the ifr for the entire recording session
+st1<-setIntervals(st,s=getIntervalsEnvironment(rs,environment = "sqr70")[1,1],e=getIntervalsEnvironment(rs,environment = "sqr70")[1,2]) # set some intervals
+sp<-speedScore(sp,st1,pt,minSpeed=3,maxSpeed=100,runLm=T) # get speed scores using ifr within intervals
+print(sp@speedScore)
+```
+
+You can also plot the firing rate of a cell as a function of running speed.
+
+```{R speedTuningCurve}
+srl<-speedRateTuningCurve(sp,st1,pt,minSpeed=3,maxSpeed=100)
+print(head(srl))
+plot(srl$mid[which(srl$clu==7)],srl$rate[which(srl$clu==7)],type='l',xlab="Running speed (cm/sec)",ylab="Firing rate (Hz)")
+```
+
+## Map stability
+
+Map stability is just a correlation coeficient between the friring rate values of 2 firing rate maps.
+You get this score by creating firing rate maps in two separate SpatialProperties2d objects. 
+Then you call the method `firingRateMapCorrelation(sp1,sp2)` to get the map stability scores.
+Here is an example that would work for a project in which the recording sessions have at least 2 trials in the `sqr70` environment.
+```{R sp2d_stability,cache=TRUE,eval=FALSE}
+  ## Set intervals at first sqr70
+  st1<-setIntervals(st,s=getIntervalsEnvironment(rs,environment = "sqr70")[1,1],e=getIntervalsEnvironment(rs,environment = "sqr70")[1,2])
+  ## Set intervals at second sqr70
+  st2<-setIntervals(st,s=getIntervalsEnvironment(rs,environment = "sqr70")[2,1],e=getIntervalsEnvironment(rs,environment = "sqr70")[2,2])
+  ## Prepare the positrack object
+  pt<-speedFilter(pt,minSpeed = 3,maxSpeed = 100)
+  ## Get 2 SpatialProperties2d objects with maps of the first and second trials
+  ## Make sure that the maps are construct with the same Positrack object
+  sp1<-firingRateMap2d(sp,st1,pt)
+  sp2<-firingRateMap2d(sp,st2,pt)
+  ## Get the map stability
+  mapCorr<-firingRateMapCorrelation(sp1,sp2)
+```
+
 ## Spatial autocorrelations
 
 You probably noticed that the neuron with the cluster id `8` looks like a grid cell.
@@ -145,13 +192,11 @@ There is also the function `firingRateMapAutosPlot()` to plot all spatial autoco
 
 ## Spikes on path
 
-It is often beneficial to look at raw data to better appreciate the quality of the data. 
-In the case of spatially selective neurons, this means to look at the path of the animal together with the spikes.
+It is a good idea to inspect the raw position data to identify potential problems. 
+In the case of spatially selective neurons, this means to look at the path of the animal together with the spikes. Use the function `spikeOnPath` to get the path and spike positions. Only data that fall withing the intervals set in the SpikeTrain object will be used. `spikeOnPathPlot` generate the plot for a single neuron.
 
 ```{R sp2d_spikesOnPath}
-pt2<-setInvalidOutsideInterval(pt,getIntervalsEnvironment(rs,env="sqr70"))
-sop<-spikeOnPath(sp,st.sqr70,pt2)
+sop<-spikeOnPath(sp,st.sqr70,pt)
 spikeOnPathPlot(sop,clu=8)
 rm(session,datadir,rs,pt,st,st.sqr70,sp,pt2,sop,statThreshold)
 ```
-
